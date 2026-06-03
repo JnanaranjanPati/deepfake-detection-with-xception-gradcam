@@ -10,6 +10,20 @@ To make the model's predictions more understandable, GradCAM++ is incorporated i
 
 
 ## 2. Motivation
+The increasing accessibility of deepfake generation tools has made the creation of realistic manipulated media easier than ever before. Modern deepfake techniques can generate highly convincing facial manipulations that are often difficult for humans to distinguish from authentic content. As a result, deepfakes have become a growing concern in areas such as social media, journalism, digital identity verification, cybersecurity, and digital forensics.
+Most existing deepfake detection systems focus only on binary classification, determining whether content is real or fake. While such systems can identify manipulated media, they provide limited information about the nature of the forgery. In practical forensic investigations, understanding how an image was manipulated can be as important as detecting that it was manipulated.
+This project was motivated by three key objectives:
+1. Move Beyond Binary Deepfake Detection
+Rather than only predicting whether an image is real or fake, the proposed system aims to identify the specific manipulation technique used to generate the forgery. This additional level of analysis provides more meaningful forensic information and encourages the model to learn richer manipulation-specific features.
+2. Focus on Facial Manipulation Artifacts
+Deepfake generation techniques primarily modify facial regions while leaving most background information unchanged. Training on complete video frames can cause a model to learn irrelevant patterns related to lighting, clothing, or scene context. To address this issue, face detection and cropping are incorporated into the preprocessing pipeline, ensuring that the model focuses on the most relevant visual evidence.
+3. Improve Model Interpretability
+Deep learning models often operate as black boxes, making it difficult to understand the reasoning behind their predictions. In security-sensitive applications, such lack of transparency can reduce trust in automated systems. To improve interpretability, GradCAM++ is integrated into the inference pipeline, enabling visualization of the facial regions that contribute most strongly to each prediction. These visual explanations help verify that the model is learning meaningful manipulation artifacts rather than relying on irrelevant image features.
+Why Xception?
+Xception was selected as the backbone architecture because of its strong performance in image forensics and deepfake detection tasks. Its depthwise separable convolution design enables efficient feature extraction while maintaining high representational power. Previous research has also demonstrated the effectiveness of Xception-based models on the FaceForensics++ benchmark, making it a suitable foundation for the proposed multi-task framework.
+By combining facial preprocessing, multi-task learning, transfer learning, and explainable AI techniques, this project aims to develop a deepfake detection system that is not only accurate but also informative, interpretable, and practically useful for digital media verification.
+
+
 
 ## 3. Dataset
 
