@@ -27,6 +27,91 @@ By combining facial preprocessing, multi-task learning, transfer learning, and e
 
 ## 3. Dataset
 
+### FaceForensics++ Dataset
+
+This project utilizes the FaceForensics++ (FF++) dataset, one of the most widely used benchmark datasets for deepfake detection and digital media forensics. The dataset contains both authentic and manipulated facial videos generated using multiple state-of-the-art face manipulation techniques, making it suitable for training and evaluating robust deepfake detection systems.
+
+Unlike datasets that focus solely on binary deepfake classification, FaceForensics++ provides multiple manipulation categories, enabling the development of systems capable of identifying not only whether content is fake but also the specific technique used to generate the forgery.
+
+### Dataset Categories
+
+For this study, seven classes were used:
+
+| Category          | Description                                                             |
+| ----------------- | ----------------------------------------------------------------------- |
+| Original          | Authentic, unaltered videos                                             |
+| DeepFakes         | Identity swapping using deep learning-based face replacement            |
+| FaceSwap          | Traditional face swapping technique                                     |
+| Face2Face         | Facial expression transfer between individuals                          |
+| NeuralTextures    | Neural rendering-based facial manipulation                              |
+| FaceShifter       | Advanced face replacement using generative networks                     |
+| DeepFakeDetection | Additional manipulated samples provided for deepfake detection research |
+
+These categories allow the model to learn both general deepfake artifacts and manipulation-specific characteristics.
+
+### Multi-Task Label Design
+
+To support the proposed multi-task learning framework, each image is assigned two labels:
+
+#### Binary Label
+
+Used for deepfake detection:
+
+| Class                   | Binary Label |
+| ----------------------- | ------------ |
+| Original                | 0            |
+| All Manipulated Classes | 1            |
+
+#### Manipulation Type Label
+
+Used only for fake samples:
+
+| Manipulation Technique | Type Label |
+| ---------------------- | ---------- |
+| DeepFakes              | 0          |
+| FaceSwap               | 1          |
+| Face2Face              | 2          |
+| NeuralTextures         | 3          |
+| FaceShifter            | 4          |
+| DeepFakeDetection      | 5          |
+
+This dual-label strategy enables the network to simultaneously learn whether an image is manipulated and identify the manipulation technique responsible for generating it.
+
+### Dataset Preparation Strategy
+
+The original FaceForensics++ dataset consists of videos rather than individual images. Training directly on raw videos introduces several challenges:
+
+* High redundancy between adjacent frames
+* Increased storage requirements
+* Longer preprocessing and training times
+* Potential bias toward specific facial poses and expressions
+
+To address these issues, a dedicated preprocessing pipeline was designed to transform the raw videos into a balanced facial image dataset suitable for deep learning.
+
+The preprocessing workflow includes:
+
+1. Train-validation splitting at the video level (80:20 ratio)
+2. Frame sampling from videos
+3. Face detection using MediaPipe
+4. Facial region extraction
+5. Image resizing to 224 × 224 pixels
+6. Dataset organization by manipulation category
+
+This approach ensures that the model is trained on relevant facial information while maintaining diversity across identities, poses, and expressions.
+
+### Why FaceForensics++?
+
+FaceForensics++ was selected because it offers several advantages for deepfake detection research:
+
+* Multiple manipulation techniques in a single dataset
+* Large-scale collection of real and manipulated videos
+* Widely adopted benchmark within the research community
+* Availability of both classical and deep learning-based manipulations
+* Suitable for both binary and multi-class forensic analysis
+
+These characteristics make FaceForensics++ an ideal dataset for developing and evaluating an explainable multi-task deepfake detection framework.
+
+
 ## 4. Data Preprocessing Pipeline
 
 ## 5. Data Augmentation
