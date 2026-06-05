@@ -114,6 +114,125 @@ These characteristics make FaceForensics++ an ideal dataset for developing and e
 
 ## 4. Data Preprocessing Pipeline
 
+The quality of a deepfake detection system depends not only on the model architecture but also on the quality of the data provided during training. Raw videos from FaceForensics++ contain redundant frames, varying lighting conditions, background clutter, and other factors that may negatively impact feature learning. Therefore, a dedicated preprocessing pipeline was designed to transform the raw video dataset into a structured collection of facial images suitable for deep learning.
+
+The complete preprocessing workflow is illustrated below:
+
+```text
+Raw Videos
+     ↓
+Train/Validation Split
+     ↓
+Frame Sampling
+(Every 30th Frame)
+     ↓
+MediaPipe Face Detection
+     ↓
+Face Cropping
+     ↓
+Image Resizing (224×224)
+     ↓
+Dataset Organization
+```
+
+### 4.1 Train-Validation Split
+
+The original videos from each manipulation category were divided into training and validation sets using an 80:20 ratio.
+
+This split was performed at the video level rather than the frame level to prevent data leakage. If frames from the same video appeared in both training and validation sets, the model could memorize video-specific patterns rather than learning generalized manipulation artifacts.
+
+Benefits of video-level splitting:
+
+* Prevents information leakage between datasets
+* Produces a more realistic evaluation scenario
+* Encourages better model generalization
+
+### 4.2 Frame Sampling
+
+Videos contain thousands of frames, many of which are nearly identical to their neighboring frames. Using every frame would significantly increase storage requirements and computational cost while contributing little additional information.
+
+To address this issue, every 30th frame was extracted from each video.
+
+This strategy offers several advantages:
+
+* Reduces redundancy between consecutive frames
+* Decreases preprocessing and training time
+* Preserves diversity of facial expressions and poses
+* Improves storage efficiency
+
+By sampling frames at regular intervals, the dataset maintains visual diversity while eliminating unnecessary repetition.
+
+### 4.3 Face Detection using MediaPipe
+
+Deepfake manipulations primarily affect facial regions. Background objects, clothing, and environmental features typically remain unchanged and may introduce noise during training.
+
+To focus the model on relevant forensic evidence, MediaPipe Face Detection was employed to locate facial regions within each sampled frame.
+
+MediaPipe was selected because it provides:
+
+* Fast real-time face detection
+* High detection accuracy
+* Robust performance across varying poses and lighting conditions
+* Lightweight computational requirements
+
+Only frames with successfully detected faces were retained for further processing.
+
+### 4.4 Face Cropping
+
+After face detection, the bounding box coordinates provided by MediaPipe were used to crop the facial region from the original frame.
+
+This step serves several important purposes:
+
+* Removes irrelevant background information
+* Reduces the influence of scene-specific artifacts
+* Forces the model to focus on facial manipulation traces
+* Improves feature quality for deepfake detection
+
+Training directly on facial regions enables the model to concentrate on subtle inconsistencies such as texture distortions, blending artifacts, unnatural boundaries, and synthetic facial patterns.
+
+### 4.5 Image Resizing
+
+The extracted facial regions were resized to a fixed resolution of 224 × 224 pixels.
+
+This resolution was chosen because:
+
+* It matches the expected input dimensions of the pretrained Xception network
+* It reduces computational requirements
+* It ensures consistency across all samples
+
+Standardizing image dimensions allows efficient batch processing during training and inference.
+
+### 4.6 Dataset Organization
+
+The processed images were organized into category-specific directories corresponding to their manipulation type.
+
+The final dataset structure consists of:
+
+* Original
+* DeepFakes
+* FaceSwap
+* Face2Face
+* NeuralTextures
+* FaceShifter
+* DeepFakeDetection
+
+Each image inherits both a binary label (Real/Fake) and a manipulation type label, supporting the multi-task learning framework used in this project.
+
+### Impact of the Preprocessing Pipeline
+
+The combination of video-level splitting, frame sampling, face detection, face cropping, and image normalization creates a high-quality training dataset that emphasizes relevant forensic information while minimizing noise and redundancy.
+
+This preprocessing strategy provides several benefits:
+
+* Improved training efficiency
+* Reduced dataset redundancy
+* Better feature learning
+* Enhanced model generalization
+* Stronger focus on manipulation artifacts
+
+As a result, the model is able to learn more discriminative features for both deepfake detection and manipulation classification.
+
+
 ## 5. Data Augmentation
 
 ## 6. Model Architecture
