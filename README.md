@@ -235,6 +235,128 @@ As a result, the model is able to learn more discriminative features for both de
 
 ## 5. Data Augmentation
 
+Deep learning models often suffer from overfitting when trained on limited variations of data. Although the FaceForensics++ dataset contains a large number of samples, real-world deepfake content can appear under different lighting conditions, compression levels, camera settings, and facial orientations. To improve the robustness and generalization capability of the proposed model, several data augmentation techniques were applied during training.
+
+The augmentation pipeline was designed to simulate realistic variations that may be encountered in practical deployment scenarios while preserving the forensic artifacts necessary for deepfake detection.
+
+### Augmentation Pipeline
+
+The following transformations were applied to training images:
+
+```python
+transforms.Resize((224,224))
+transforms.RandomHorizontalFlip()
+transforms.ColorJitter(
+    brightness=0.2,
+    contrast=0.2,
+    saturation=0.2,
+    hue=0.1
+)
+transforms.ToTensor()
+transforms.Normalize(
+    [0.485, 0.456, 0.406],
+    [0.229, 0.224, 0.225]
+)
+```
+
+### 5.1 Image Resizing
+
+All facial images were resized to 224 × 224 pixels before being passed to the model.
+
+This ensures:
+
+* Consistent input dimensions
+* Efficient batch processing
+* Compatibility with the pretrained Xception backbone
+
+Standardized image dimensions help maintain stable training and reduce computational overhead.
+
+### 5.2 Random Horizontal Flipping
+
+A random horizontal flip was applied during training.
+
+Facial structures are largely symmetrical, meaning that a manipulated face remains manipulated regardless of whether it appears on the left or right side of an image.
+
+Benefits include:
+
+* Increased data diversity
+* Reduced orientation bias
+* Improved robustness to pose variations
+* Better generalization to unseen samples
+
+By exposing the model to mirrored versions of the same face, the network learns more invariant and generalized features.
+
+### 5.3 Color Jittering
+
+Real-world videos often experience changes in:
+
+* Brightness
+* Contrast
+* Saturation
+* Color balance
+
+Additionally, deepfake videos distributed through social media platforms may undergo multiple rounds of compression and re-encoding, introducing visual variations not present in the original dataset.
+
+To simulate these conditions, ColorJitter augmentation was applied with controlled variations in:
+
+* Brightness
+* Contrast
+* Saturation
+* Hue
+
+This augmentation helps the model become less sensitive to environmental and recording conditions while maintaining its ability to identify manipulation artifacts.
+
+### 5.4 Conversion to Tensor Format
+
+Images were converted into PyTorch tensors to enable efficient GPU processing and compatibility with the deep learning training pipeline.
+
+This transformation converts pixel values into a format suitable for neural network computations.
+
+### 5.5 ImageNet Normalization
+
+Since the Xception backbone was initialized using pretrained ImageNet weights, the input images were normalized using the standard ImageNet mean and standard deviation values:
+
+```text
+Mean = [0.485, 0.456, 0.406]
+Std  = [0.229, 0.224, 0.225]
+```
+
+Normalization offers several advantages:
+
+* Aligns the input distribution with pretrained weights
+* Improves convergence speed
+* Stabilizes training
+* Enhances transfer learning effectiveness
+
+Without proper normalization, the pretrained feature representations learned from ImageNet may not transfer effectively to the deepfake detection task.
+
+### Validation Data Processing
+
+Unlike the training dataset, validation images were not augmented.
+
+Only the following transformations were applied:
+
+* Resize to 224 × 224
+* Conversion to tensor format
+* ImageNet normalization
+
+This ensures that validation performance reflects the model's true generalization ability rather than artificially modified samples.
+
+### Impact of Data Augmentation
+
+The augmentation strategy helps the model learn more robust and transferable features by exposing it to a wider range of visual variations during training.
+
+Key benefits include:
+
+* Reduced overfitting
+* Improved generalization
+* Better robustness to lighting variations
+* Increased tolerance to compression artifacts
+* Improved performance on unseen deepfake samples
+
+Combined with face-based preprocessing and transfer learning, these augmentation techniques contribute significantly to the reliability and effectiveness of the proposed deepfake detection framework.
+
+
 ## 6. Model Architecture
 
 ## 7. Multi-Task Learning Strategy
