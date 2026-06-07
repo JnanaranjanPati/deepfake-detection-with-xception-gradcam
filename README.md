@@ -359,6 +359,215 @@ Combined with face-based preprocessing and transfer learning, these augmentation
 
 ## 6. Model Architecture
 
+The proposed deepfake detection framework is built upon the Xception architecture and follows a multi-task learning paradigm. Rather than training separate models for deepfake detection and manipulation classification, a single shared backbone network is used to learn common forensic features, while two specialized classification heads perform task-specific predictions.
+
+This design improves feature utilization, reduces computational complexity, and encourages the model to learn richer representations of manipulated facial content.
+
+### Architecture Overview
+
+The overall architecture consists of three major components:
+
+```text
+Input Face Image (224 × 224)
+            │
+            ▼
+    Xception Backbone
+            │
+            ▼
+      Feature Vector
+            │
+    ┌───────┴────────┐
+    ▼                ▼
+
+Binary Head      Type Head
+
+Real/Fake      DeepFakes
+               FaceSwap
+               Face2Face
+               NeuralTextures
+               FaceShifter
+               DeepFakeDetection
+```
+
+### 6.1 Why Xception?
+
+Xception (Extreme Inception) is a convolutional neural network architecture that replaces traditional convolutions with depthwise separable convolutions. This design allows the network to learn spatial and channel-wise features more efficiently while reducing the number of parameters.
+
+Xception was selected for several reasons:
+
+* Proven effectiveness in deepfake detection research
+* Strong performance on FaceForensics++ benchmarks
+* Efficient feature extraction through depthwise separable convolutions
+* Availability of pretrained ImageNet weights
+* Ability to capture subtle facial manipulation artifacts
+
+Deepfake detection often relies on identifying extremely small inconsistencies in textures, boundaries, lighting, and facial details. Xception has consistently demonstrated strong capability in learning such fine-grained visual features.
+
+### 6.2 Transfer Learning Strategy
+
+Training a deep neural network entirely from scratch requires a massive amount of labeled data and computational resources.
+
+To overcome this challenge, transfer learning was employed.
+
+The model was initialized using pretrained ImageNet weights:
+
+```python
+self.backbone = timm.create_model(
+    "xception",
+    pretrained=True
+)
+```
+
+The pretrained network already possesses a strong understanding of general visual patterns such as:
+
+* Edges
+* Textures
+* Shapes
+* Spatial relationships
+
+These learned representations provide a strong starting point for deepfake detection and significantly accelerate convergence.
+
+### 6.3 Feature Extraction Backbone
+
+The original classification layer of Xception was removed:
+
+```python
+self.backbone.reset_classifier(0)
+```
+
+After removal, the backbone acts purely as a feature extractor.
+
+For each input image, the network produces a high-dimensional feature representation containing forensic information learned from the facial image.
+
+These extracted features are then shared across both downstream tasks.
+
+### 6.4 Binary Classification Head
+
+The first task is binary deepfake detection.
+
+A fully connected layer is attached to the backbone output:
+
+```python
+self.binary_head = nn.Linear(
+    in_features,
+    1
+)
+```
+
+This head predicts:
+
+| Output | Meaning |
+| ------ | ------- |
+| 0      | Real    |
+| 1      | Fake    |
+
+A sigmoid activation is applied during inference to obtain the probability that an image is manipulated.
+
+The binary branch learns generalized forensic features that distinguish authentic content from manipulated content.
+
+### 6.5 Manipulation Classification Head
+
+The second task identifies the manipulation technique responsible for generating a fake image.
+
+A second fully connected layer is attached to the same backbone:
+
+```python
+self.type_head = nn.Linear(
+    in_features,
+    NUM_TYPES
+)
+```
+
+The model predicts one of six manipulation categories:
+
+| Class ID | Manipulation Type |
+| -------- | ----------------- |
+| 0        | DeepFakes         |
+| 1        | FaceSwap          |
+| 2        | Face2Face         |
+| 3        | NeuralTextures    |
+| 4        | FaceShifter       |
+| 5        | DeepFakeDetection |
+
+This branch encourages the backbone to learn manipulation-specific characteristics rather than only distinguishing real from fake.
+
+### 6.6 Multi-Task Learning Framework
+
+Traditional deepfake detectors perform only binary classification.
+
+In contrast, the proposed architecture simultaneously learns:
+
+#### Task 1: Deepfake Detection
+
+```text
+Real vs Fake
+```
+
+#### Task 2: Manipulation Classification
+
+```text
+DeepFakes
+FaceSwap
+Face2Face
+NeuralTextures
+FaceShifter
+DeepFakeDetection
+```
+
+The shared backbone enables both tasks to benefit from common facial forensic features.
+
+Advantages of this approach include:
+
+* Better feature sharing
+* Reduced model complexity
+* Improved learning efficiency
+* Stronger manipulation awareness
+* Increased interpretability
+
+By learning both tasks simultaneously, the network develops richer representations than a conventional binary classifier.
+
+### 6.7 Forward Pass
+
+For each input image:
+
+1. The image is passed through the Xception backbone.
+2. A feature vector is extracted.
+3. The feature vector is simultaneously forwarded to:
+
+   * Binary Classification Head
+   * Manipulation Classification Head
+4. Both outputs are produced in a single forward pass.
+
+Implementation:
+
+```python
+def forward(self, x):
+
+    features = self.backbone(x)
+
+    binary_out = self.binary_head(features)
+
+    type_out = self.type_head(features)
+
+    return binary_out, type_out
+```
+
+### Architectural Advantages
+
+The proposed architecture combines the strengths of transfer learning and multi-task learning to build an efficient and explainable deepfake detection system.
+
+Key benefits include:
+
+* Strong forensic feature extraction through Xception
+* Simultaneous detection and manipulation classification
+* Efficient parameter sharing between tasks
+* Reduced training complexity
+* Improved generalization capability
+* Compatibility with GradCAM++ explainability methods
+
+This architecture serves as the foundation of the proposed framework and enables both accurate deepfake detection and detailed manipulation analysis.
+
+
 ## 7. Multi-Task Learning Strategy
 
 ## 8. Training Methodology
