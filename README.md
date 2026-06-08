@@ -726,6 +726,248 @@ By combining binary detection and manipulation classification within a unified f
 
 ## 8. Training Methodology
 
+The training process was designed to maximize the effectiveness of transfer learning while ensuring stable optimization, efficient GPU utilization, and strong generalization performance. The proposed multi-task framework was trained using the preprocessed FaceForensics++ dataset, enabling the model to simultaneously learn deepfake detection and manipulation classification.
+
+### Training Configuration
+
+The following configuration was used during training:
+
+| Parameter                | Value                                |
+| ------------------------ | ------------------------------------ |
+| Backbone                 | Xception                             |
+| Input Size               | 224 × 224                            |
+| Batch Size               | 64                                   |
+| Optimizer                | AdamW                                |
+| Learning Rate            | 3 × 10⁻⁴                             |
+| Maximum Epochs           | 80                                   |
+| Loss Functions           | BCEWithLogitsLoss + CrossEntropyLoss |
+| Mixed Precision Training | Enabled                              |
+| Early Stopping           | Enabled                              |
+| Device                   | GPU (CUDA)                           |
+
+These settings were selected to balance training stability, convergence speed, and computational efficiency.
+
+### Data Loading Strategy
+
+The processed dataset was loaded using PyTorch DataLoaders.
+
+```python
+train_loader = DataLoader(
+    train_dataset,
+    batch_size=64,
+    shuffle=True
+)
+
+val_loader = DataLoader(
+    val_dataset,
+    batch_size=64,
+    shuffle=False
+)
+```
+
+The training dataset was shuffled during each epoch to prevent the model from learning ordering patterns, while the validation dataset remained fixed to ensure consistent evaluation.
+
+### Optimization using AdamW
+
+The AdamW optimizer was selected for model training.
+
+```python
+optimizer = optim.AdamW(
+    model.parameters(),
+    lr=3e-4
+)
+```
+
+AdamW offers several advantages:
+
+* Adaptive learning rates
+* Faster convergence
+* Better handling of sparse gradients
+* Decoupled weight decay regularization
+* Improved generalization performance
+
+Compared to standard Adam, AdamW helps reduce overfitting while maintaining efficient optimization.
+
+### Mixed Precision Training
+
+To improve training efficiency, Automatic Mixed Precision (AMP) was employed.
+
+```python
+scaler = torch.cuda.amp.GradScaler()
+```
+
+Training was performed using:
+
+```python
+with torch.cuda.amp.autocast():
+```
+
+Mixed precision training provides several benefits:
+
+* Reduced GPU memory consumption
+* Faster computation
+* Larger effective batch sizes
+* Improved hardware utilization
+
+This approach allows the model to train more efficiently without sacrificing predictive performance.
+
+### Forward Pass
+
+For each training batch:
+
+1. Images are passed through the Xception backbone.
+2. Shared feature representations are extracted.
+3. Binary predictions are generated.
+4. Manipulation-type predictions are generated.
+5. Multi-task loss is computed.
+6. Gradients are backpropagated.
+7. Model parameters are updated.
+
+Workflow:
+
+```text
+Input Images
+      │
+      ▼
+Xception Backbone
+      │
+      ▼
+Feature Representation
+      │
+ ┌────┴────┐
+ ▼         ▼
+
+Binary   Type
+Head     Head
+      │
+      ▼
+Combined Loss
+      │
+      ▼
+Backpropagation
+```
+
+### Loss Optimization
+
+The final loss consists of two components:
+
+#### Binary Detection Loss
+
+Measures performance on:
+
+```text
+Real vs Fake
+```
+
+using BCEWithLogitsLoss.
+
+#### Manipulation Classification Loss
+
+Measures performance on:
+
+```text
+DeepFakes
+FaceSwap
+Face2Face
+NeuralTextures
+FaceShifter
+DeepFakeDetection
+```
+
+using CrossEntropyLoss.
+
+The total objective function is:
+
+```text
+Total Loss = Binary Loss + Type Loss
+```
+
+This enables simultaneous optimization of both tasks during a single training process.
+
+### Performance Monitoring
+
+During training, three key metrics were monitored:
+
+#### Training Loss
+
+Measures how effectively the model is minimizing the objective function.
+
+#### Binary Accuracy
+
+Measures performance on:
+
+```text
+Real vs Fake
+```
+
+classification.
+
+#### Manipulation Classification Accuracy
+
+Measures performance on:
+
+```text
+Manipulation Type Prediction
+```
+
+for fake samples only.
+
+Monitoring both tasks independently helps identify whether improvements in one task negatively affect the other.
+
+### Model Checkpointing
+
+The validation loss was used to determine whether the model improved during training.
+
+Whenever validation loss decreased:
+
+```python
+torch.save(
+    model.state_dict(),
+    "best_model_multi.pth"
+)
+```
+
+The best-performing model was automatically saved.
+
+This ensures that the final deployed model corresponds to the strongest validation performance rather than simply the final training epoch.
+
+### Early Stopping Strategy
+
+To prevent overfitting, an early stopping mechanism was implemented.
+
+```python
+patience = 3
+```
+
+If validation loss failed to improve for three consecutive epochs:
+
+```text
+Training Stops
+```
+
+Benefits include:
+
+* Reduced overfitting
+* Faster experimentation
+* Improved generalization
+* Prevention of unnecessary computation
+
+This strategy allows training to terminate automatically once the model stops learning meaningful patterns.
+
+### Training Objectives
+
+The training methodology was designed to achieve the following goals:
+
+* Learn robust deepfake detection features
+* Identify manipulation-specific artifacts
+* Prevent overfitting
+* Improve computational efficiency
+* Maximize transfer learning benefits
+* Produce a model suitable for explainable AI analysis
+
+By combining transfer learning, multi-task optimization, mixed precision training, checkpointing, and early stopping, the proposed framework achieves efficient and stable training while learning both generalized and manipulation-specific forensic representations.
+
+
 ## 9. Explainability with GradCAM++
 
 ## 10. Results
