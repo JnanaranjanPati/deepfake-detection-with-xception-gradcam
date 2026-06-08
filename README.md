@@ -570,6 +570,160 @@ This architecture serves as the foundation of the proposed framework and enables
 
 ## 7. Multi-Task Learning Strategy
 
+
+Traditional deepfake detection systems are typically designed as binary classifiers that determine whether an image is real or manipulated. While such approaches can achieve strong detection performance, they provide limited information about the nature of the forgery and often fail to capture manipulation-specific characteristics.
+
+To overcome these limitations, this project adopts a multi-task learning strategy in which a single neural network is trained to perform two related tasks simultaneously:
+
+### Task 1: Binary Deepfake Detection
+
+The primary objective is to determine whether a facial image is authentic or manipulated.
+
+```text
+Real → 0
+Fake → 1
+```
+
+This task enables the model to learn general forensic patterns that distinguish manipulated content from authentic content.
+
+### Task 2: Manipulation Type Classification
+
+The secondary objective is to identify the specific manipulation technique responsible for generating a fake image.
+
+```text
+DeepFakes          → 0
+FaceSwap           → 1
+Face2Face          → 2
+NeuralTextures     → 3
+FaceShifter        → 4
+DeepFakeDetection  → 5
+```
+
+This task encourages the model to learn manipulation-specific artifacts and subtle differences between various deepfake generation methods.
+
+### Why Multi-Task Learning?
+
+A standard binary classifier only learns features necessary to separate real and fake samples. However, different deepfake generation techniques introduce different visual artifacts.
+
+For example:
+
+* DeepFakes often produce blending inconsistencies around facial boundaries.
+* FaceSwap may introduce texture mismatches between source and target faces.
+* Face2Face manipulates facial expressions while preserving identity.
+* NeuralTextures generates synthetic facial details through neural rendering.
+
+By forcing the model to recognize these manipulation types, the shared backbone learns richer and more discriminative forensic representations.
+
+This provides several advantages:
+
+* Better feature learning
+* Improved generalization
+* Reduced overfitting
+* More informative predictions
+* Increased forensic interpretability
+
+### Shared Feature Learning
+
+Both tasks utilize the same Xception backbone.
+
+```text
+Input Face
+      │
+      ▼
+Xception Backbone
+      │
+ ┌────┴────┐
+ ▼         ▼
+
+Binary   Manipulation
+Head       Head
+```
+
+The backbone learns facial forensic features only once, and these features are shared across both tasks.
+
+This design is more efficient than training two independent models and allows both tasks to benefit from common learned representations.
+
+### Loss Function Design
+
+Training is performed using a combination of two loss functions:
+
+#### Binary Classification Loss
+
+The binary detection branch uses Binary Cross Entropy with Logits Loss (BCEWithLogitsLoss):
+
+```python
+binary_loss = BCEWithLogitsLoss()
+```
+
+This loss measures the model's ability to distinguish between real and fake images.
+
+#### Manipulation Classification Loss
+
+The manipulation classification branch uses Cross Entropy Loss:
+
+```python
+type_loss = CrossEntropyLoss()
+```
+
+This loss evaluates the model's ability to correctly identify the manipulation technique.
+
+### Selective Manipulation Loss
+
+One of the key design decisions in this project is that manipulation classification loss is calculated only for fake images.
+
+```python
+fake_mask = binary_label == 1
+
+if fake_mask.sum() > 0:
+    type_loss = ce_loss(
+        type_out[fake_mask],
+        type_label[fake_mask]
+    )
+```
+
+This approach was adopted because real images do not belong to any manipulation category.
+
+Assigning manipulation labels to authentic images would introduce artificial relationships and could encourage the model to learn incorrect patterns.
+
+By restricting manipulation classification to fake samples only:
+
+* Real images contribute only to binary learning.
+* Fake images contribute to both tasks.
+* The model learns cleaner manipulation-specific features.
+* Training becomes more stable and meaningful.
+
+### Combined Objective Function
+
+The final training objective is the sum of both task losses:
+
+```text
+Total Loss =
+Binary Detection Loss
++
+Manipulation Classification Loss
+```
+
+Conceptually:
+
+```text
+Ltotal = Lbinary + Ltype
+```
+
+The binary loss ensures accurate deepfake detection, while the manipulation loss encourages detailed forensic understanding of different forgery techniques.
+
+### Benefits of the Proposed Strategy
+
+The multi-task learning framework offers several advantages over traditional single-task deepfake detectors:
+
+* Simultaneous detection and manipulation classification
+* Improved feature sharing across tasks
+* Better utilization of training data
+* Stronger forensic feature extraction
+* Reduced computational complexity compared to separate models
+* More informative predictions for forensic analysis
+
+By combining binary detection and manipulation classification within a unified framework, the proposed model learns both general and manipulation-specific forensic cues, resulting in a more robust and explainable deepfake detection system.
+
 ## 8. Training Methodology
 
 ## 9. Explainability with GradCAM++
