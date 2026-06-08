@@ -970,6 +970,140 @@ By combining transfer learning, multi-task optimization, mixed precision trainin
 
 ## 9. Explainability with GradCAM++
 
+### Why Explainability Matters
+
+Deep learning models have achieved remarkable success in deepfake detection; however, they often operate as "black boxes," providing predictions without explaining the reasoning behind them. In security-sensitive applications such as digital forensics, misinformation detection, and media verification, relying solely on prediction scores is often insufficient.
+
+A deepfake detector should not only determine whether an image is manipulated but should also provide evidence supporting its decision. Understanding which facial regions influence the model's prediction helps validate the reliability of the system and increases trust in its outputs.
+
+To address this challenge, GradCAM++ was integrated into the inference pipeline of the proposed framework.
+
+### What is GradCAM++?
+
+Gradient-weighted Class Activation Mapping Plus Plus (GradCAM++) is an explainable AI (XAI) technique that generates visual explanations for convolutional neural networks.
+
+GradCAM++ works by:
+
+1. Computing gradients flowing through a target convolutional layer.
+2. Measuring the contribution of feature maps to the final prediction.
+3. Generating a localization map that highlights important image regions.
+4. Overlaying the heatmap on the original image for visual interpretation.
+
+The resulting heatmap reveals which parts of the image the model considers most important when making a decision.
+
+### Why GradCAM++ Instead of Standard GradCAM?
+
+GradCAM++ was selected because it offers several improvements over standard GradCAM:
+
+* Better localization of important regions
+* Improved handling of multiple activation regions
+* More precise heatmaps
+* Stronger visual interpretability
+
+These advantages make GradCAM++ particularly suitable for deepfake detection, where manipulation artifacts may appear in multiple facial regions simultaneously.
+
+### Integration into the Proposed Framework
+
+During inference, the trained Xception model generates a binary prediction indicating whether the image is real or fake.
+
+To visualize the reasoning behind this prediction:
+
+1. The input image is passed through the trained model.
+2. Gradients are computed with respect to a selected convolutional layer.
+3. A GradCAM++ heatmap is generated.
+4. The heatmap is overlaid on the original facial image.
+
+Inference workflow:
+
+```text
+Input Face Image
+        │
+        ▼
+Xception Network
+        │
+        ▼
+Prediction
+(Real/Fake)
+        │
+        ▼
+GradCAM++
+        │
+        ▼
+Activation Heatmap
+        │
+        ▼
+Visual Explanation
+```
+
+### Target Layer Selection
+
+The final convolutional feature extraction stage of the Xception backbone was selected as the target layer:
+
+```python
+target_layer = model.backbone.conv4
+```
+
+This layer contains high-level semantic information while still preserving spatial localization, making it suitable for generating meaningful visual explanations.
+
+### Binary Prediction Visualization
+
+Since GradCAM++ is applied to the binary classification branch, the generated heatmaps highlight the facial regions that most strongly influence the model's real/fake decision.
+
+For manipulated images, the network often focuses on:
+
+* Mouth region
+* Eye region
+* Facial boundaries
+* Skin texture inconsistencies
+* Blending artifacts
+* Synthetic texture patterns
+
+These areas frequently contain visual clues introduced during deepfake generation.
+
+### Interpretation of Heatmaps
+
+The generated heatmaps provide valuable insight into the model's behavior.
+
+#### High Activation Regions
+
+Areas displayed with stronger intensity indicate regions that contribute significantly to the prediction.
+
+#### Low Activation Regions
+
+Areas with lower intensity have minimal influence on the model's decision-making process.
+
+A reliable deepfake detector should primarily focus on manipulated facial regions rather than unrelated background elements.
+
+### Benefits of Explainability
+
+Integrating GradCAM++ provides several advantages:
+
+* Improves model transparency
+* Increases user trust
+* Enables forensic analysis
+* Assists in model debugging
+* Helps verify meaningful feature learning
+* Detects potential model biases
+
+These visual explanations help ensure that the network is learning genuine manipulation artifacts rather than exploiting unintended correlations within the dataset.
+
+### Example Analysis
+
+In one of the generated predictions, the model classified an image as a manipulated Face2Face sample with a very high confidence score.
+
+The corresponding GradCAM++ visualization highlighted regions around the mouth and lower facial area. This observation aligns with the nature of Face2Face manipulations, which primarily modify facial expressions while preserving identity.
+
+Such behavior suggests that the model has learned meaningful forensic features rather than relying on irrelevant visual information.
+
+### Contribution to the Overall Framework
+
+The integration of GradCAM++ transforms the proposed system from a simple classification model into an explainable deepfake analysis framework.
+
+Instead of providing only a prediction label, the system offers visual evidence supporting its decision. This additional layer of interpretability is particularly valuable in real-world applications where understanding the reasoning behind an automated decision is as important as the prediction itself.
+
+By combining accurate classification with visual explainability, the proposed framework provides a more trustworthy and informative approach to deepfake detection and manipulation analysis.
+
+
 ## 10. Results
 
 ## 11. Limitations
